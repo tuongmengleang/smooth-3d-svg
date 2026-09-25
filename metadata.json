@@ -1,0 +1,6 @@
+{
+  "name": "Global Listing Empty State",
+  "description": "A crafted SVG transition animation for an empty global directory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
