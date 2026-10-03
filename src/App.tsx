@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   CalendarDays,
   CalendarX2,
-  CalendarCheck2,
   Globe2,
   ChevronRight,
   Sun,
@@ -17,23 +16,29 @@ import {
   HeartPulse,
   Sparkles,
   RefreshCw,
-  Sliders,
   Layers,
   Code2,
+  LayoutTemplate,
+  ToggleLeft,
+  ToggleRight,
+  MousePointerClick,
 } from 'lucide-react';
 import { LayeredEmptyIcon } from './components/LayeredEmptyIcon';
 import { LeavePlanEmptyIcon } from './components/LeavePlanEmptyIcon';
+import { DualCalendarCards } from './components/CalendarEmptyBanner';
 
-type ViewMode = 'leave-planner' | 'global-directory' | 'side-by-side';
+type ViewMode = 'capsule-banner' | 'leave-planner' | 'global-directory' | 'all';
 type LeaveType = 'vacation' | 'remote' | 'sick' | 'personal';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<ViewMode>('leave-planner');
+  const [viewMode, setViewMode] = useState<ViewMode>('capsule-banner');
+  const [isBannerEmpty, setIsBannerEmpty] = useState<boolean>(true);
   const [isLeaveEmpty, setIsLeaveEmpty] = useState<boolean>(true);
   const [isDirectorySearching, setIsDirectorySearching] = useState<boolean>(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(true);
+  const [showBannerText, setShowBannerText] = useState<boolean>(false);
   const [leaveType, setLeaveType] = useState<LeaveType>('vacation');
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false); // Start in clean light mode as shown in the user's screenshot
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [showCodeSnippet, setShowCodeSnippet] = useState<boolean>(false);
 
@@ -51,13 +56,12 @@ export default function App() {
     if (!isAutoPlaying) return;
 
     const interval = setInterval(() => {
-      if (viewMode === 'leave-planner' || viewMode === 'side-by-side') {
-        setIsLeaveEmpty(prev => !prev);
-      }
-      if (viewMode === 'global-directory' || viewMode === 'side-by-side') {
+      setIsBannerEmpty(prev => !prev);
+      setIsLeaveEmpty(prev => !prev);
+      if (viewMode === 'global-directory' || viewMode === 'all') {
         setIsDirectorySearching(prev => !prev);
       }
-    }, 4500);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, viewMode]);
@@ -73,55 +77,79 @@ export default function App() {
   const currentDays = daysCountMap[leaveType];
 
   const handleCopyCode = () => {
-    const code = `<LeavePlanEmptyIcon 
+    let code = '';
+    if (viewMode === 'capsule-banner') {
+      code = `<DualCalendarCards
+  isEmpty={${isBannerEmpty}}
+  showText={${showBannerText}}
+  onToggle={() => setIsEmpty(prev => !prev)}
+/>`;
+    } else {
+      code = `<LeavePlanEmptyIcon 
   isEmpty={${isLeaveEmpty}} 
   leaveType="${leaveType}" 
   daysCount={${currentDays}} 
 />`;
+    }
     navigator.clipboard?.writeText(code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
   return (
-    <div className={`min-h-screen bg-neutral-100 dark:bg-[#0f0f10] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 selection:bg-neutral-800 selection:text-white`}>
+    <div className="min-h-screen bg-[#f5f6f8] dark:bg-[#0f0f12] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 selection:bg-neutral-800 selection:text-white">
       
       {/* Top Global Navigation Bar */}
-      <header className="h-16 border-b border-neutral-200 dark:border-neutral-800/80 bg-white/80 dark:bg-[#161618]/80 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between gap-4">
+      <header className="h-16 border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white/85 dark:bg-[#161619]/85 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto h-full flex items-center justify-between gap-3">
           
           {/* Brand & Breadcrumb */}
           <div className="flex items-center gap-2 sm:gap-3 text-sm">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-[#2e2e2e] dark:to-[#1e1e1e] flex items-center justify-center border border-neutral-300/80 dark:border-white/10 shadow-sm shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-[#2e2e2e] dark:to-[#1e1e1e] flex items-center justify-center border border-neutral-300/80 dark:border-white/10 shadow-xs shrink-0">
               <CalendarDays className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
             </div>
             <div className="flex items-center gap-1.5 font-medium">
               <span className="text-neutral-900 dark:text-white font-semibold tracking-tight">Empty States</span>
               <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-              <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">3D Clay Animations</span>
+              <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">Motion System</span>
             </div>
           </div>
 
           {/* Center Tabs: View Switcher */}
-          <div className="flex items-center p-1 rounded-xl bg-neutral-200/70 dark:bg-neutral-800/60 border border-neutral-300/40 dark:border-neutral-700/50 text-xs font-medium">
+          <div className="flex items-center p-1 rounded-xl bg-neutral-200/60 dark:bg-neutral-800/60 border border-neutral-300/40 dark:border-neutral-700/50 text-xs font-medium overflow-x-auto">
+            {/* NEW CAPSULE BANNER (Inspired by screenshot) */}
+            <button
+              onClick={() => setViewMode('capsule-banner')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 ${
+                viewMode === 'capsule-banner'
+                  ? 'bg-white dark:bg-[#252528] text-neutral-900 dark:text-white shadow-xs font-semibold'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+            >
+              <LayoutTemplate className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Capsule Banner</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-500/20">
+                NEW
+              </span>
+            </button>
+
+            {/* 3D CLAY CALENDAR */}
             <button
               onClick={() => setViewMode('leave-planner')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 ${
                 viewMode === 'leave-planner'
                   ? 'bg-white dark:bg-[#252528] text-neutral-900 dark:text-white shadow-xs font-semibold'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
             >
               <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
-              <span>Leave Plan</span>
-              <span className="hidden md:inline text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold">
-                NEW
-              </span>
+              <span>3D Calendar</span>
             </button>
 
+            {/* GLOBAL DIRECTORY */}
             <button
               onClick={() => setViewMode('global-directory')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 ${
                 viewMode === 'global-directory'
                   ? 'bg-white dark:bg-[#252528] text-neutral-900 dark:text-white shadow-xs font-semibold'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -131,16 +159,17 @@ export default function App() {
               <span>Global Listing</span>
             </button>
 
+            {/* ALL / SIDE-BY-SIDE */}
             <button
-              onClick={() => setViewMode('side-by-side')}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                viewMode === 'side-by-side'
+              onClick={() => setViewMode('all')}
+              className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 ${
+                viewMode === 'all'
                   ? 'bg-white dark:bg-[#252528] text-neutral-900 dark:text-white shadow-xs font-semibold'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-neutral-500" />
-              <span>Side-by-Side</span>
+              <span>All Icons</span>
             </button>
           </div>
 
@@ -158,12 +187,12 @@ export default function App() {
             >
               {isAutoPlaying ? (
                 <>
-                  <Pause className="w-3.5 h-3.5 animate-pulse" />
+                  <Pause className="w-3.5 h-3.5 animate-pulse text-emerald-600 dark:text-emerald-400" />
                   <span className="hidden lg:inline">Looping</span>
                 </>
               ) : (
                 <>
-                  <Play className="w-3.5 h-3.5" />
+                  <Play className="w-3.5 h-3.5 text-neutral-500" />
                   <span className="hidden lg:inline">Play</span>
                 </>
               )}
@@ -190,7 +219,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Code Snippet Drawer/Banner (Collapsible) */}
+      {/* Code Snippet Drawer (Collapsible) */}
       <AnimatePresence>
         {showCodeSnippet && (
           <motion.div
@@ -201,32 +230,136 @@ export default function App() {
           >
             <div className="max-w-4xl mx-auto p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
               <div className="font-mono text-neutral-300">
-                <span className="text-pink-400">&lt;LeavePlanEmptyIcon</span>{' '}
-                <span className="text-amber-300">isEmpty</span>=&#123;
-                <span className="text-cyan-300">{isLeaveEmpty ? 'true' : 'false'}</span>&#125;{' '}
-                <span className="text-amber-300">leaveType</span>=
-                <span className="text-emerald-300">"{leaveType}"</span>{' '}
-                <span className="text-amber-300">daysCount</span>=&#123;
-                <span className="text-purple-300">{currentDays}</span>&#125;{' '}
-                <span className="text-pink-400">/&gt;</span>
+                {viewMode === 'capsule-banner' ? (
+                  <>
+                    <span className="text-pink-400">&lt;DualCalendarCards</span>{' '}
+                    <span className="text-amber-300">isEmpty</span>=&#123;
+                    <span className="text-cyan-300">{isBannerEmpty ? 'true' : 'false'}</span>&#125;{' '}
+                    <span className="text-amber-300">showText</span>=&#123;
+                    <span className="text-cyan-300">{showBannerText ? 'true' : 'false'}</span>&#125;{' '}
+                    <span className="text-pink-400">/&gt;</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-pink-400">&lt;LeavePlanEmptyIcon</span>{' '}
+                    <span className="text-amber-300">isEmpty</span>=&#123;
+                    <span className="text-cyan-300">{isLeaveEmpty ? 'true' : 'false'}</span>&#125;{' '}
+                    <span className="text-amber-300">leaveType</span>=
+                    <span className="text-emerald-300">"{leaveType}"</span>{' '}
+                    <span className="text-pink-400">/&gt;</span>
+                  </>
+                )}
               </div>
               <button
                 onClick={handleCopyCode}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-medium transition-colors border border-neutral-700"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-medium transition-colors border border-neutral-700 shrink-0"
               >
                 {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedCode ? 'Copied to Clipboard' : 'Copy JSX Snippet'}</span>
+                <span>{copiedCode ? 'Copied' : 'Copy JSX'}</span>
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 max-w-6xl mx-auto w-full">
+      {/* Main Container */}
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 max-w-5xl mx-auto w-full">
         
-        {/* VIEW 1: LEAVE PLANNER SELECTED DATES EMPTY STATE (Requested Feature) */}
-        {(viewMode === 'leave-planner' || viewMode === 'side-by-side') && (
+        {/* ============================================================== */}
+        {/* VIEW 1: CAPSULE EMPTY BANNER (Directly Inspired by Screenshot) */}
+        {/* ============================================================== */}
+        {viewMode === 'capsule-banner' && (
+          <div className="w-full flex flex-col items-center">
+            
+            {/* Interactive Settings Bar */}
+            <div className="w-full max-w-2xl mb-8 flex flex-wrap items-center justify-between gap-3 bg-white/80 dark:bg-[#18181b]/80 backdrop-blur-sm p-3 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 shadow-xs">
+              
+              {/* Toggle Solid Pills vs Real Text */}
+              <button
+                onClick={() => setShowBannerText(prev => !prev)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700/80 text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors border border-neutral-200 dark:border-neutral-700"
+              >
+                {showBannerText ? (
+                  <ToggleRight className="w-4 h-4 text-indigo-500" />
+                ) : (
+                  <ToggleLeft className="w-4 h-4 text-neutral-400" />
+                )}
+                <span>{showBannerText ? 'Showing Readable Text' : 'Solid White Pills (Exact Screenshot UI)'}</span>
+              </button>
+
+              {/* State Manual Toggle Button */}
+              <button
+                onClick={() => {
+                  setIsBannerEmpty(prev => !prev);
+                  setIsAutoPlaying(false);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                  isBannerEmpty
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent shadow-xs'
+                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{isBannerEmpty ? 'Simulate Select Dates' : 'Simulate Empty State'}</span>
+              </button>
+            </div>
+
+            {/* THE SINGLE COMPONENT CONTAINING BOTH CARDS (ONE BIG, ONE SMALL) */}
+            <div className="w-full max-w-2xl flex flex-col items-center">
+              <div className="w-full flex items-center justify-between text-xs font-medium text-neutral-400 dark:text-neutral-500 px-2 mb-3">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  Two Cards in One Component (Distinct Widths)
+                </span>
+                <span className="text-[11px] flex items-center gap-1 text-neutral-400">
+                  <MousePointerClick className="w-3 h-3" /> Click cards to trigger 3D transition
+                </span>
+              </div>
+
+              {/* Single Component containing both cards */}
+              <DualCalendarCards
+                isEmpty={isBannerEmpty}
+                showText={showBannerText}
+                onToggle={() => {
+                  setIsBannerEmpty(prev => !prev);
+                  setIsAutoPlaying(false);
+                }}
+              />
+            </div>
+
+            {/* Design Spec & Feature Notes */}
+            <div className="w-full max-w-2xl mt-10 p-5 rounded-2xl bg-white/60 dark:bg-[#161619]/60 border border-neutral-200/80 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 flex flex-col gap-2.5">
+              <div className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Enhanced Design Specs matching Screenshot Requirements:</span>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] leading-relaxed">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span><strong>Different Widths:</strong> Big card spans full width (`620px`) while small card is compact (`460px`).</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span><strong>Clean Solid White Pills:</strong> Removed all skeleton loading effects for clean architectural bars.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span><strong>3D Calendar Smooth Transition:</strong> Continuous sinusoidal float, multi-body badge float, and ground shadow.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span><strong>Morphing Action Badge:</strong> Smooth spring rotation between Plus (+) and Confirmation Checkmark (✓).</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* VIEW 2: 3D CLAY CALENDAR LEAVE PLANNER */}
+        {/* ============================================================== */}
+        {viewMode === 'leave-planner' && (
           <div className="w-full flex flex-col items-center">
             
             {/* Interactive Leave Controls Bar */}
@@ -265,7 +398,6 @@ export default function App() {
               <button
                 onClick={() => {
                   setIsLeaveEmpty(prev => !prev);
-                  // pause auto-play on explicit user click so they can inspect at their own pace
                   setIsAutoPlaying(false);
                 }}
                 className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700/80 text-xs font-medium text-neutral-800 dark:text-neutral-200 transition-colors border border-neutral-200 dark:border-neutral-700 flex items-center justify-center gap-1.5"
@@ -364,51 +496,32 @@ export default function App() {
                     setIsLeaveEmpty(prev => !prev);
                     setIsAutoPlaying(false);
                   }}
-                  className={`w-full py-3 px-6 rounded-2xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`w-full py-3 px-6 rounded-2xl text-sm font-semibold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer ${
                     isLeaveEmpty
                       ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100'
                       : 'bg-neutral-100 dark:bg-[#252528] text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-[#2e2e32] border border-neutral-200 dark:border-neutral-700'
                   }`}
                 >
-                  <AnimatePresence mode="wait">
-                    {isLeaveEmpty ? (
-                      <motion.div
-                        key="btn-select"
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        className="flex items-center gap-2"
-                      >
-                        <CalendarDays className="w-4 h-4 text-amber-400" />
-                        <span>Select Leave Dates (Oct 18 – 22)</span>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="btn-clear"
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        className="flex items-center gap-2"
-                      >
-                        <CalendarX2 className="w-4 h-4 text-rose-500" />
-                        <span>Clear Selected Dates</span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {isLeaveEmpty ? (
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-amber-400" />
+                      <span>Select Leave Dates (Oct 18 – 22)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CalendarX2 className="w-4 h-4 text-rose-500" />
+                      <span>Clear Selected Dates</span>
+                    </div>
+                  )}
                 </button>
-
-                {/* Secondary Status indicator */}
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500 px-2">
-                  <span>Balance: 16 Days Total</span>
-                  <span>{isLeaveEmpty ? '0 Days used' : `${currentDays} Days in draft`}</span>
-                  <span>{isLeaveEmpty ? '16 Days left' : `${16 - currentDays} Days left`}</span>
-                </div>
               </div>
             </motion.div>
           </div>
         )}
 
-        {/* VIEW 2: GLOBAL DIRECTORY LISTING EMPTY STATE (Previous turn component) */}
+        {/* ============================================================== */}
+        {/* VIEW 3: GLOBAL DIRECTORY LISTING */}
+        {/* ============================================================== */}
         {viewMode === 'global-directory' && (
           <div className="w-full flex flex-col items-center">
             
@@ -483,27 +596,52 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW 3: SIDE-BY-SIDE GALLERY / DESIGN SYSTEM */}
-        {viewMode === 'side-by-side' && (
-          <div className="w-full mt-8 pt-8 border-t border-neutral-200 dark:border-neutral-800">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
-                <Globe2 className="w-4 h-4 text-blue-500" />
-                <span>Global Listing Component (Companion)</span>
-              </h3>
-              <button
-                onClick={() => setIsDirectorySearching(prev => !prev)}
-                className="text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white underline cursor-pointer"
-              >
-                Toggle Directory State
-              </button>
+        {/* ============================================================== */}
+        {/* VIEW 4: ALL COMPONENTS COMPARISON */}
+        {/* ============================================================== */}
+        {viewMode === 'all' && (
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            
+            {/* Item 1: Capsule Banner */}
+            <div className="bg-white dark:bg-[#18181a] p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                  Capsule Empty Banner (Screenshot Match)
+                </span>
+                <button
+                  onClick={() => setIsBannerEmpty(prev => !prev)}
+                  className="text-xs text-indigo-500 hover:underline"
+                >
+                  Toggle State
+                </button>
+              </div>
+              <DualCalendarCards
+                isEmpty={isBannerEmpty}
+                showText={false}
+                onToggle={() => setIsBannerEmpty(prev => !prev)}
+              />
             </div>
-            <div className="w-full max-w-md mx-auto bg-white dark:bg-[#18181a] rounded-[2.5rem] p-6 flex flex-col items-center text-center ring-1 ring-neutral-200/90 dark:ring-neutral-800 shadow-sm">
-              <LayeredEmptyIcon isSearching={isDirectorySearching} />
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                {isDirectorySearching ? 'Searching APAC directories...' : 'No files or directory listings'}
-              </p>
+
+            {/* Item 2: 3D Volumetric Calendar */}
+            <div className="bg-white dark:bg-[#18181a] p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 flex flex-col items-center text-center gap-4">
+              <div className="w-full flex items-center justify-between">
+                <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                  3D Clay Calendar Pad
+                </span>
+                <button
+                  onClick={() => setIsLeaveEmpty(prev => !prev)}
+                  className="text-xs text-amber-500 hover:underline"
+                >
+                  Toggle State
+                </button>
+              </div>
+              <LeavePlanEmptyIcon
+                isEmpty={isLeaveEmpty}
+                leaveType={leaveType}
+                daysCount={5}
+              />
             </div>
+
           </div>
         )}
 
@@ -511,11 +649,11 @@ export default function App() {
 
       {/* Footer Info */}
       <footer className="py-4 border-t border-neutral-200/80 dark:border-neutral-800/60 text-center text-xs text-neutral-400 dark:text-neutral-500 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 px-4">
-        <span>3D Claymorphic Empty State System</span>
+        <span>Pure SVG &amp; CSS Math (No External Assets)</span>
         <span className="hidden sm:inline">•</span>
-        <span>Smooth Spring &amp; Sinusoidal Motion</span>
+        <span>Fluid Motion Physics</span>
         <span className="hidden sm:inline">•</span>
-        <span>Zero External Image Dependencies (Pure SVG &amp; CSS Math)</span>
+        <span>Light &amp; Dark Theme Ready</span>
       </footer>
 
     </div>
